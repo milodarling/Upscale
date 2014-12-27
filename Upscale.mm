@@ -72,7 +72,7 @@ extern NSString* PSDeletionActionKey;
         PSTextFieldSpecifier* customX = [PSTextFieldSpecifier preferenceSpecifierNamed:@""
                                                                 target:self
                                                                    set:@selector(setXValue:)
-                                                                   get:@selector(readPreferenceValue:)
+                                                                   get:@selector(getXValue:)
                                                                 detail:Nil
                                                                   cell:PSEditTextCell
                                                                   edit:Nil];
@@ -81,7 +81,7 @@ extern NSString* PSDeletionActionKey;
         PSTextFieldSpecifier* customY = [PSTextFieldSpecifier preferenceSpecifierNamed:@""
                                                                                 target:self
                                                                                    set:@selector(setYValue:)
-                                                                                   get:@selector(readPreferenceValue:)
+                                                                                   get:@selector(getYValue:)
                                                                                 detail:Nil
                                                                                   cell:PSEditTextCell
                                                                                   edit:Nil];
@@ -186,8 +186,14 @@ extern NSString* PSDeletionActionKey;
 -(void)setYValue:(id)value {
     height = [value intValue];
 }
+-(id)getYValue {
+    return height ? [NSNumber numberWithInt:height] : nil;
+}
 -(void)setXValue:(id)value {
     width = [value intValue];
+}
+-(id)getXValue {
+    return width ? [NSNumber numberWithInt:width] : nil;
 }
 -(void)go {
     [self showAlert];
@@ -219,6 +225,8 @@ void customGo(id self, SEL _cmd) {
     customVal = [NSString stringWithFormat:@"custom%d-y", count];
     CFPreferencesSetAppValue ( (__bridge CFStringRef)customVal, (__bridge CFNumberRef)[NSNumber numberWithInt:height], CFSTR("com.bd452.upscale") );
     CFPreferencesSetAppValue ( CFSTR("count"), (__bridge CFNumberRef)[NSNumber numberWithInt:count], CFSTR("com.bd452.upscale") );
+    height = 0;
+    width = 0;
     [self reloadSpecifiers];
     
 }
