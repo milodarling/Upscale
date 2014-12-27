@@ -1,7 +1,7 @@
 #import <Preferences/Preferences.h>
 #import <objc/runtime.h>
 
-//#define DEBUG
+#define DEBUG
 
 #ifdef DEBUG
 #define DebugLog(s, ...) \
@@ -11,6 +11,7 @@ NSLog(@"[Upscale] >> %@", \
 #else
 #define DebugLog(s, ...)
 #endif
+#define SYSTEM_TINT [UIColor colorWithRed:0 green:0.478431 blue:1 alpha:1]
 
 @interface PSMagnifyController : PSListController <UIScrollViewDelegate, UIWebViewDelegate>
 
@@ -20,7 +21,7 @@ NSLog(@"[Upscale] >> %@", \
 
 +(id)magnifyModeWithSize:(CGSize)arg1 name:(id)arg2 localizedName:(id)arg3 isZoomed:(BOOL)arg4 ;
 @end
-@interface UpscaleListController: PSListController <UIAlertViewDelegate> {
+@interface UpscaleListController: PSEditableListController <UIAlertViewDelegate> {
 }
 @end
 
@@ -28,6 +29,7 @@ NSLog(@"[Upscale] >> %@", \
 int height;
 int width;
 NSDictionary *prefs;
+extern NSString* PSDeletionActionKey;
 - (id)specifiers {
 	if(_specifiers == nil) {
         DebugLog(@"Making Initial Specifiers");
@@ -120,9 +122,11 @@ NSDictionary *prefs;
                                                                            set:NULL
                                                                            get:NULL
                                                                         detail:Nil
-                                                                          cell:PSButtonCell
+                                                                          cell:PSLinkCell
                                                                           edit:Nil];
                 specCustomNew->action = newMethod;
+                [specCustomNew setProperty:NSClassFromString(@"UpscaleButton") forKey:@"cellClass"];
+                [specCustomNew setProperty:NSStringFromSelector(@selector(removedSpecifier:)) forKey:PSDeletionActionKey];
                 [specifiers insertObject:specCustomNew atIndex:index];
                 index++;
             }
@@ -136,7 +140,9 @@ NSDictionary *prefs;
 	return _specifiers;
 }
 -(void)go_4 {
-    
+    width = 640;
+    height = 960;
+    [self showAlert];
 }
 -(void)go_5 {
     width = 640;
@@ -211,6 +217,41 @@ void customGo(id self, SEL _cmd) {
         [PSMagnifyController commitMagnifyMode:[PSMagnifyMode magnifyModeWithSize:size name:@"" localizedName:@"" isZoomed:1]];
     }
 }
+
+-(void)removedSpecifier:(PSSpecifier*)specifier{
+    int count = [[prefs objectForKey:@"count"] intValue];
+    NSString *name = NSStringFromSelector(specifier->action);
+    int number;
+    number = [[name substringFromIndex:6] intValue];
+    for (int i=number+1; i<=count; i++) {
+        NSString *customVal = [NSString stringWithFormat:@"custom%d-x", i];
+        int resNumber = [[prefs objectForKey:customVal] intValue];
+        customVal = [NSString stringWithFormat:@"custom%d-x", i-1];
+        CFPreferencesSetAppValue ( (__bridge CFStringRef)customVal, (__bridge CFNumberRef)[NSNumber numberWithInt:resNumber], CFSTR("com.bd452.upscale") );
+        customVal = [NSString stringWithFormat:@"custom%d-y", i];
+        resNumber = [[prefs objectForKey:customVal] intValue];
+        customVal = [NSString stringWithFormat:@"custom%d-y", i-1];
+        CFPreferencesSetAppValue ( (__bridge CFStringRef)customVal, (__bridge CFNumberRef)[NSNumber numberWithInt:resNumber], CFSTR("com.bd452.upscale") );
+    }
+    count--;
+    CFPreferencesSetAppValue ( CFSTR("count"), (__bridge CFNumberRef)[NSNumber numberWithInt:count], CFSTR("com.bd452.upscale") );
+}
+@end
+
+@interface UpscaleButton : PSTableCell {
+    
+}
+@end
+
+@implementation UpscaleButton
+
+-(void)layoutSubviews {
+    [super layoutSubviews];
+    self.textLabel.textColor = SYSTEM_TINT;
+    self.detailTextLabel.text = @"";
+    self.detailTextLabel.attributedText = [[NSAttributedString alloc] initWithString:@""];
+}
+
 @end
 
 // vim:ft=objc
