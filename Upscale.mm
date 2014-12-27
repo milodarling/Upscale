@@ -22,6 +22,7 @@ NSLog(@"[Upscale] >> %@", \
 +(id)magnifyModeWithSize:(CGSize)arg1 name:(id)arg2 localizedName:(id)arg3 isZoomed:(BOOL)arg4 ;
 @end
 @interface UpscaleListController: PSEditableListController <UIAlertViewDelegate> {
+//    UIColor *systemTint;
 }
 @end
 
@@ -41,6 +42,7 @@ extern NSString* PSDeletionActionKey;
                                                               cell:PSButtonCell
                                                               edit:Nil];
         spec4->action = @selector(go_4);
+        //systemTint = spec4.textLabel.textColor;
         PSSpecifier* spec5 = [PSSpecifier preferenceSpecifierNamed:@"iPhone 5/5s"
                                                             target:self
                                                                set:NULL
@@ -165,7 +167,7 @@ extern NSString* PSDeletionActionKey;
         UIAlertView* alert_Dialog = [[UIAlertView alloc] initWithTitle:@"Upscale"
                                                                message:@"Please set both values (and not to 0)"
                                                               delegate:nil
-                                                     cancelButtonTitle:@"Cancel"
+                                                     cancelButtonTitle:@"Ok"
                                                      otherButtonTitles:nil];
         [alert_Dialog show];
         [alert_Dialog release];
@@ -200,6 +202,16 @@ void customGo(id self, SEL _cmd) {
 
 -(void)createNew {
     [self.view endEditing:YES];
+    if (width == 0 || height == 0 || !height || !width) {
+        UIAlertView* alert_Dialog = [[UIAlertView alloc] initWithTitle:@"Upscale"
+                                                               message:@"Please set both values (and not to 0)"
+                                                              delegate:nil
+                                                     cancelButtonTitle:@"Ok"
+                                                     otherButtonTitles:nil];
+        [alert_Dialog show];
+        [alert_Dialog release];
+        return;
+    }
     int count = [[prefs objectForKey:@"count"] intValue];
     count++;
     NSString *customVal = [NSString stringWithFormat:@"custom%d-x", count];
@@ -235,6 +247,12 @@ void customGo(id self, SEL _cmd) {
     }
     count--;
     CFPreferencesSetAppValue ( CFSTR("count"), (__bridge CFNumberRef)[NSNumber numberWithInt:count], CFSTR("com.bd452.upscale") );
+    CFStringRef appID = CFSTR("com.bd452.upscale");
+    DebugLog(@"Getting keyList");
+    CFArrayRef keyList = CFPreferencesCopyKeyList(appID, kCFPreferencesCurrentUser, kCFPreferencesAnyHost);
+    DebugLog(@"KeyList exists, doing stuff");
+    prefs = (NSDictionary *)CFPreferencesCopyMultiple(keyList, appID, kCFPreferencesCurrentUser, kCFPreferencesAnyHost);
+    CFRelease(keyList);
 }
 @end
 
@@ -247,9 +265,14 @@ void customGo(id self, SEL _cmd) {
 
 -(void)layoutSubviews {
     [super layoutSubviews];
-    self.textLabel.textColor = SYSTEM_TINT;
-    self.detailTextLabel.text = @"";
-    self.detailTextLabel.attributedText = [[NSAttributedString alloc] initWithString:@""];
+    static UIColor *systemTintColor;
+    static dispatch_once_t onceToken;
+    dispatch_once(&onceToken, ^{
+        UIView* view = [[UIView alloc] init];
+        systemTintColor = view.tintColor;
+    });
+    self.textLabel.textColor = systemTintColor;
+    self.accessoryType = UITableViewCellAccessoryNone;
 }
 
 @end
